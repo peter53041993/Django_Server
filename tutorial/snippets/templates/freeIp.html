@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+
+
+<p>IP異動加白</p>
+<form action="/freeIp/" method="POST">
+    {% csrf_token %}
+
+    <div class="">
+        {{ form.as_table }}
+        <input type="submit" value="Submit">
+    </div>
+</form>
+<p>ip請輸入個人的內網ip，例如: 10.13.12.38</p>
+<p>若為APP登入，請使用: 61.220.138.45</p>
+
+<p>{{ text }}</p>

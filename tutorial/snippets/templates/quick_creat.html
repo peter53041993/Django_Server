@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+
+<!-- 原html code, 下方用form取代
+
+<form action="/your-name/" method="post">
+    <label for="test_value">test value: </label>
+    <input id="test_value" type="text" name="test value" value="">
+    <input type="submit" value="OK">
+</form>
+
+-->
+
+<head>
+    {% load bootstrap3 %}
+    {% bootstrap_css %}
+    {% bootstrap_javascript %}
+    <title>Quick Create User</title>
+</head>
+
+
+<body role="document">
+    <!-- 導航欄 -->
+    <nav class="navbar navbar-inverse navbar-fixed-top">
+        <div class="container">
+            <div class="navbar-header">
+                <a class="navbar-brand" style="margin-left: -200px;" href="/"> Api Root </a>
+            </div>
+            <div id="navbar" class="collapse navbar-collapse">
+                <ul class="nav navbar-nav">
+                    <li><a href="/creatUser/"> Create User </a></li>
+                    <li class="active"><a href="#"> Quick Creat User </a></li>
+                    <li><a href="/getAvlBal"> User Balance </a></li>
+                </ul>
+                <ul class="nav navbar-nav navbar-right">
+                    <li><a href="#"> Logout </a></li>
+                </ul>
+            </div>
+    
+        </div>
+    </nav>
+
+
+
+    
+
+    <div class="create" style="padding-top: 80px; padding-left: 20px;">
+            <form class="navbar-form" action="/quickCreat/" method="POST">
+                <div class="form-group">
+                    {% csrf_token %}
+                    {{ form.as_table }}
+                    <button type="submit" class="btn btn-success"> Submit </button>
+                </div>
+            </form>
+    </div>
+<!--
+{% for field in form %}
+    <div class="fieldWrapper">
+        {{ field.errors }}
+        {{ field.label_tag }} 
+        {{ field }}
+        
+
+        {% if field.help_text %}
+            <p class="help">{{ field.help_text|safe }}</p>
+        {% endif %}
+    </div>
+    <br>
+       
+{% endfor %}
+-->
+</br>
+
+<!-- template for error lsit
+{% if form.subject.errors %}
+    <ol>
+    {% for error in form.test_user.errors %}
+        <li><strong>{{ error|escape }}</strong></li>
+    {% endfor %}
+    </ol>
+{% endif %}
+-->
+
+
+
+<div style="padding-left: 20px; padding-right: 20px;">
+    <table class="table table-striped">
+        <tr>
+            <th>id</th>
+            <th>New User</th>
+            <th>User Chain</th>
+        </tr>
+        {% for item in create_list %}
+            <tr>
+                {% for data in item %}
+                    <td>{{ data }}</td>
+                {% endfor %}
+            </tr>
+        {% endfor %}
+    </table>
+</div>
+
+</body>

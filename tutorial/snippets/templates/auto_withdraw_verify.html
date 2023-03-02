@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+
+<!-- 原html code, 下方用form取代
+
+<form action="/your-name/" method="post">
+    <label for="test_value">test value: </label>
+    <input id="test_value" type="text" name="test value" value="">
+    <input type="submit" value="OK">
+</form>
+
+-->
+
+<head>
+    {% load bootstrap3 %}
+    {% bootstrap_css %}
+    {% bootstrap_javascript %}
+    <title>Auto Withdraw Verify</title>
+</head>
+
+
+<body role="document">
+    <!-- 導航欄 -->
+    <nav class="navbar navbar-inverse navbar-fixed-top">
+        <div class="container">
+            <div class="navbar-header">
+                <a class="navbar-brand" style="margin-left: -200px;" href="/"> Api Root </a>
+            </div>
+            <div id="navbar" class="collapse navbar-collapse">
+                <ul class="nav navbar-nav">
+                    <li class="active"><a href="#"> Create User </a></li>
+                    <li><a href="/quickCreat/"> Quick Creat User </a></li>
+                    <li><a href="/getAvlBal"> User Balance </a></li>
+                </ul>
+                <ul class="nav navbar-nav navbar-right">
+                    <li><a href="#"> Logout </a></li>
+                </ul>
+            </div>
+    
+        </div>
+    </nav>
+
+
+
+
+<!--
+{% for field in form %}
+    <div class="fieldWrapper">
+        {{ field.errors }}
+        {{ field.label_tag }} 
+        {{ field }}
+        
+
+        {% if field.help_text %}
+            <p class="help">{{ field.help_text|safe }}</p>
+        {% endif %}
+    </div>
+    <br>
+       
+{% endfor %}
+-->
+<form class="navbar-form" action="/auto_withdraw_verify/" method="POST">
+    {% csrf_token %}
+    <div class="create" style="padding-top: 80px; padding-left: 20px;">
+        {{ form.as_table }}
+        <button type="submit" class="btn btn-success"> Submit </button>
+    </div>
+
+</form>
+<a href="http://wiki.plg/pages/viewpage.action?pageId=50959084" target="_blank" style="padding-left: 30px; padding-right: 20px;">規則確認</a>
+<div style="padding-left: 160px;">{{ error_message }}</div>
+</br>
+<!-- template for error lsit
+{% if form.subject.errors %}
+    <ol>
+    {% for error in form.test_user.errors %}
+        <li><strong>{{ error|escape }}</strong></li>
+    {% endfor %}
+    </ol>
+{% endif %}
+-->
+
+<!-- <div style="padding-left: 20px; padding-right: 20px;">Total: {{total_value}}</div> -->
+<div style="padding-left: 785px;">判斷順序: 清零點 -> 提現成功 -> 第一次充值成功 -> 固定三個月</div>
+<div class="result" style="padding-left: 20px; padding-right: 20px;">
+    <table class="table table-striped">
+        <tr>
+            <th>User ID</th>
+            <th>Account</th>
+            <th>Redis 清零點</th>
+            <th>舊Redis 清零點</th>
+            <th>人工審核Flag</th>
+            <th>搜尋的清零點(對照用)</th>
+            <th>上次提現成功</th>
+            <th>第一次充值成功</th>
+            <th>上一次充值成功</th>
+            <th>搜尋的人工審核Flag(對照用)</th>
+            <th>使用的時間</th>
+        </tr>
+
+        <tr>
+            <td>{{ accountInfo.userId }}</td>
+            <td>{{ accountInfo.account }}</td>
+            <td>{{ redisPoints.nweBetToZero }}</td>
+            <td>{{ redisPoints.betToZero }}</td>
+            <td>{{ redisPoints.manualPassRule12 }}</td>
+            <td>{{ timePoints.betToZero }}</td>
+            <td>{{ timePoints.prevWithDraw }}</td>
+            <td>{{ timePoints.fristCharge }}</td>
+            <td>{{ timePoints.prevCharge }}</td>
+            <td>{{ timePoints.rule12ManualPass }}</td>
+            <td>{{ timePoints.claen_point }}</td>
+        </tr>
+    </table>
+
+
+</div>
+
+
+<div style="padding-left: 30px;">{{ stopRule }}</div>
+<div class="result" style="padding-left: 20px; padding-right: 20px;">
+    <table class="table table-striped">
+        <tr>
+            <th>後台開關是否開啟</th>
+            <th>規則</th>
+            <th>審核結果</th>
+            <th>比較參數</th>
+            <th>統計開始時間</th>
+            <th>統計結束時間</th>
+        </tr>
+        <!-- Rule 1 参与三方游戏-->
+        <tr>
+            <td>{{verifyRrsult.switch.0}}</td>
+            <td>Rule 1:<br>参与三方游戏</td>
+            <td>{{verifyRrsult.1.result}}</td>
+            <td>請自行查詢遊戲紀錄</td>
+            <td>{{verifyRrsult.1.startTime}}</td>
+            <td>{{verifyRrsult.1.endTime}}</td>
+        </tr>
+
+        <!-- Rule2: 已打流水 < 充值金额 X倍-->
+        <tr>
+            <td>{{verifyRrsult.switch.1}}</td>
+            <td>Rule2:<br>已打流水 < 充值金额 X倍</td>
+            <td>{{verifyRrsult.2.result}}</td>
+            <td>
+                若無充值直接命中<br>
+                流水: {{verifyRrsult.2.flow}}<br>
+                充值: {{verifyRrsult.2.charge}}<br>
+                倍數X: {{verifyRrsult.2.muti}}<br>
+            </td>
+            <td>{{verifyRrsult.2.startTime}}</td>
+            <td>{{verifyRrsult.2.endTime}}</td>
+        </tr>
+
+        <!-- Rule3: 黑名单-->
+        <tr>
+            <td>{{verifyRrsult.switch.2}}</td>
+            <td>Rule3:<br>黑名单</td>
+            <td>{{verifyRrsult.3.result}}</td>
+            <td>
+                觸發事件: {{verifyRrsult.3.trigger}} 
+            </td>
+            <td></td>
+            <td></td>
+        </tr>
+
+        <!-- Rule4: 活动参与-->
+        <tr>
+            <td>{{verifyRrsult.switch.3}}</td>
+            <td>Rule4:<br>活动参与</td>
+            <td>{{verifyRrsult.4.result}}</td>
+            <td>
+                帳變單號:<br>
+                {% for data in verifyRrsult.4.sn %}
+                    {{data}}
+                {% endfor %}
+            </td>
+            <td>{{verifyRrsult.4.startTime}}</td>
+            <td>{{verifyRrsult.4.endTime}}</td>
+        </tr>
+
+        <!-- Rule5: 风控标签-->
+        <tr>
+            <td>{{verifyRrsult.switch.4}}</td>
+            <td>Rule5:<br>风控标签</td>
+            <td>{{verifyRrsult.5.result}}</td>
+            <td>
+                觸發標籤: {{verifyRrsult.5.tag}} 
+            </td>
+            <td></td>
+            <td></td>
+        </tr>
+
+        <!-- Rule6: 单笔申请提款金额 > X 元-->
+        <tr>
+            <td>{{verifyRrsult.switch.5}}</td>
+            <td>Rule6:<br>单笔申请提款金额 > X 元</td>
+            <td>{{verifyRrsult.6.result}}</td>
+            <td>
+                限制金額 : {{verifyRrsult.6.limit}} <br>
+                提現金額: {{verifyRrsult.6.withdraw}}
+            </td>
+            <td></td>
+            <td></td>
+        </tr>
+
+        <!-- Rule7: 首次使用USDT提款金额 > USDT-->
+        <tr>
+            <td>{{verifyRrsult.switch.6}}</td>
+            <td>Rule7:<br>首次使用USDT提款金额 > USDT</td>
+            <td>{{verifyRrsult.7.result}}</td>
+            <td>
+                0: 銀行卡 1: 支付寶 2: 數字錢包<br>
+                充值類型: {{verifyRrsult.7.whithType}}<br>
+                是否有過USDT提款: {{verifyRrsult.7.withInPast}}<br>
+                限制金額 : {{verifyRrsult.7.limit_amount}} <br>
+                提現金額: {{verifyRrsult.7.WithdrawAmount}}
+            </td>
+            <td></td>
+            <td></td>
+        </tr>
+
+        <!-- Rule8: X 天内提款账号信息有过变更用户-->
+        <tr>
+            <td>{{verifyRrsult.switch.7}}</td>
+            <td>Rule8:<br>X 天内提款账号信息有过变更用户</td>
+            <td>{{verifyRrsult.8.result}}</td>
+            <td>
+                觸發事件: {{verifyRrsult.8.trigger}}<br>
+                天數X: {{verifyRrsult.8.timeDelta}} 
+            </td>
+            <td>{{verifyRrsult.8.startTime}}</td>
+            <td>{{verifyRrsult.8.endTime}}</td>
+        </tr>
+
+        <!-- Rule9: 没有充值行为，但是有加币行为 X 元以上-->
+        <tr>
+            <td>{{verifyRrsult.switch.8}}</td>
+            <td>Rule9:<br>没有充值行为，但是有加币行为 X 元以上</td>
+            <td>{{verifyRrsult.9.result}}</td>
+            <td>
+                充值: {{verifyRrsult.9.charge}}<br>
+                加幣: {{verifyRrsult.9.increase}}<br>
+                加幣限制: {{verifyRrsult.9.limit}}
+            </td>
+            <td>{{verifyRrsult.9.startTime}}</td>
+            <td>{{verifyRrsult.9.endTime}}</td>
+        </tr>
+
+        <!-- Rule10: 1、新会员第 X 次充值以上才不算新会员
+              2、梭哈（下注金额超过>=金额 X% 以上）-->
+        <tr>
+            <td>{{verifyRrsult.switch.9}}</td>
+            <td>Rule10:<br>
+                1、新会员第 X 次充值以上才不算新会员<br>
+                2、梭哈（下注金额超过>=金额 X% 以上）</td>
+            <td>{{verifyRrsult.10.result}}</td>
+            <td>
+                1. 有清零點或提現成功(之前有提款/输光)，与本次申请提款时间的最近一笔充值金额做比较<br>
+                2. 若無，中途未提款，也未输光过，与充值金额(累计)做比较<br>
+                充值次數: {{verifyRrsult.10.charge_times}}<br>
+                充值次數限制: {{verifyRrsult.10.limit_charges_times}}<br>
+                使用充值比較數值: {{verifyRrsult.10.charge}}<br>
+                累計充值: {{verifyRrsult.10.charge_amount}}<br>
+                上次充值: {{verifyRrsult.10.prevCharge}}<br>
+                下注: {{verifyRrsult.10.bet_amount}}<br>
+                比例: {{verifyRrsult.10.ratio}}
+            </td>
+            <td>{{verifyRrsult.10.startTime}}</td>
+            <td>{{verifyRrsult.10.endTime}}</td>
+        </tr>
+
+        <!--Rule11: 当日提款次数超过 X 次，且累计提款超过 X 元-->
+        <tr>
+            <td>{{verifyRrsult.switch.10}}</td>
+            <td>Rule11:<br>当日提款次数超过 X 次，且累计提款超过 X 元</td>
+            <td>{{verifyRrsult.11.result}}</td>
+            <td>
+                2条满足任意一条，即命中<br>
+                提款次數: {{verifyRrsult.11.withdraw_times}}<br>
+                限制提款次數: {{verifyRrsult.11.limit_times}}<br>
+                提現金額: {{verifyRrsult.11.amount}}<br>
+                提現金額限制: {{verifyRrsult.11.limit_amount}}
+            </td>
+            <td>{{verifyRrsult.11.startTime}}</td>
+            <td>{{verifyRrsult.11.endTime}}</td>
+        </tr>
+
+        <!-- Rule12: X 天内提款成功总和大于 Y 元-->
+        <tr>
+            <td>{{verifyRrsult.switch.11}}</td>
+            <td>Rule12:<br>X 天内提款成功总和大于 Y 元</td>
+            <td>{{verifyRrsult.12.result}}</td>
+            <td>
+                提現金額: {{verifyRrsult.12.amount}}<br>
+                提現金額限制: {{verifyRrsult.12.limit_amount}}<br>
+                天數X: {{verifyRrsult.12.days}}<br>
+                是否使用人工審核通過之Flag時間: {{verifyRrsult.12.flagTrigger}}
+            </td>
+            <td>{{verifyRrsult.12.startTime}}</td>
+            <td>{{verifyRrsult.12.endTime}}</td>
+        </tr>
+
+        <!-- Rule13: 提充比：提款金额/充值金额 >= X 倍，且盈利金额 > Y 元-->
+        <tr>
+            <td>{{verifyRrsult.switch.12}}</td>
+            <td>Rule13:<br>提充比：提款金额/充值金额 >= X 倍，且盈利金额 > Y 元</td>
+            <td>{{verifyRrsult.13.result}}</td>
+            <td>
+                提現金額: {{verifyRrsult.13.withdraw}}<br>
+                充值金額: {{verifyRrsult.13.charge}}<br>
+                倍數X: {{verifyRrsult.13.ratio}}<br>
+                盈利: {{verifyRrsult.13.win}}<br>
+                限制盈利Y: {{verifyRrsult.13.limit_amount}}
+            </td>
+            <td>{{verifyRrsult.13.startTime}}</td>
+            <td>{{verifyRrsult.13.endTime}}</td>
+        </tr>
+
+        <!-- Rule14: 中投比：中奖金额/投注金额 >= X 倍，且盈利金额 > Y 元-->
+        <tr>
+            <td>{{verifyRrsult.switch.13}}</td>
+            <td>Rule14:<br>中投比：中奖金额/投注金额 >= X 倍，且盈利金额 > Y 元</td>
+            <td>{{verifyRrsult.14.result}}</td>
+            <td>
+                投注金额: {{verifyRrsult.14.bet}}<br>
+                中獎金額: {{verifyRrsult.14.award}}<br>
+                倍數X: {{verifyRrsult.14.ratio}}<br>
+                盈利: {{verifyRrsult.14.win}}<br>
+                限制盈利Y: {{verifyRrsult.14.limit_amount}}
+            </td>
+            <td>{{verifyRrsult.14.startTime}}</td>
+            <td>{{verifyRrsult.14.endTime}}</td>
+        </tr>
+
+        <!-- Rule15: 投注包号 X% 以上-->
+        <tr>
+            <td>{{verifyRrsult.switch.14}}</td>
+            <td>Rule15:<br>投注包号 X% 以上</td>
+            <td>{{verifyRrsult.15.result}}</td>
+            <td>
+                觸發投注: 彩種/期號/玩法/投注注數/總注數<br>
+                {% for data in verifyRrsult.15.trigger %}
+                    {{data}}<br>
+                {% endfor %}
+                比例X : {{verifyRrsult.15.ratio}}
+            </td>
+            <td>{{verifyRrsult.15.startTime}}</td>
+            <td>{{verifyRrsult.15.endTime}}</td>
+        </tr>
+
+        <!-- Rule16: 三个月未登录用户-->
+        <tr>
+            <td>{{verifyRrsult.switch.15}}</td>
+            <td>Rule16:<br>三个月未登录用户</td>
+            <td>{{verifyRrsult.16.result}}</td>
+            <td>
+                觸發時段: {{verifyRrsult.16.period}}
+            </td>
+            <td>{{verifyRrsult.16.startTime}}</td>
+            <td>{{verifyRrsult.16.endTime}}</td>
+        </tr>
+    </table>
+
+
+</div>
+
+</body>
+
+
+    
+

@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}戰報資料顯示{% endblock %}
+{% block header %}戰報資料顯示{% endblock %}
+{% block main %}
+<table class="table">
+    <thead>
+    <h1>{{result.msg1}}</h1>
+    <th>順序</th>
+    <th>抓取內容</th>
+    <th>抓取規則</th>
+    <th>結果</th>
+    </thead>
+    <tbody>
+    <meta charset="UTF-8">
+      {% for msg2 in result.msg2%}
+        <tr>
+            <td>
+                {{msg2}}
+            </td>
+            <td>{{result.msg3[msg2-1]}}</td>
+            <td>{{result.msg5[msg2-1]}}</td>
+            <td>{{result.msg4[msg2-1]}}</td>
+        </tr>
+      {% endfor %}
+
+    </tbody>
+</table>
+{% endblock %}

@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+
+<!-- 原html code, 下方用form取代
+
+<form action="/your-name/" method="post">
+    <label for="test_value">test value: </label>
+    <input id="test_value" type="text" name="test value" value="">
+    <input type="submit" value="OK">
+</form>
+
+-->
+
+<head>
+    {% load bootstrap3 %}
+    {% bootstrap_css %}
+    {% bootstrap_javascript %}
+    <title>Agent Verify</title>
+</head>
+
+
+<body role="document">
+    <!-- 導航欄 -->
+    <nav class="navbar navbar-inverse navbar-fixed-top">
+        <div class="container">
+            <div class="navbar-header">
+                <a class="navbar-brand" style="margin-left: -200px;" href="/"> Api Root </a>
+            </div>
+            <div id="navbar" class="collapse navbar-collapse">
+                <ul class="nav navbar-nav">
+                    <li class="active"><a href="#"> Create User </a></li>
+                    <li><a href="/quickCreat/"> Quick Creat User </a></li>
+                    <li><a href="/getAvlBal"> User Balance </a></li>
+                </ul>
+                <ul class="nav navbar-nav navbar-right">
+                    <li><a href="#"> Logout </a></li>
+                </ul>
+            </div>
+    
+        </div>
+    </nav>
+
+
+
+
+<!--
+{% for field in form %}
+    <div class="fieldWrapper">
+        {{ field.errors }}
+        {{ field.label_tag }} 
+        {{ field }}
+        
+
+        {% if field.help_text %}
+            <p class="help">{{ field.help_text|safe }}</p>
+        {% endif %}
+    </div>
+    <br>
+       
+{% endfor %}
+-->
+<form class="navbar-form" action="/agentverify/" method="POST">
+    {% csrf_token %}
+    <div class="create" style="padding-top: 80px; padding-left: 20px;">
+        {{ form.as_table }}
+        <button type="submit" class="btn btn-success"> Submit </button>
+    </div>
+
+</form>
+</br>
+
+<!-- template for error lsit
+{% if form.subject.errors %}
+    <ol>
+    {% for error in form.test_user.errors %}
+        <li><strong>{{ error|escape }}</strong></li>
+    {% endfor %}
+    </ol>
+{% endif %}
+-->
+
+
+
+<p style="padding-left: 50px; padding-right: 20px;"> 全部 </p>
+<div class="total_result" style="padding-left: 20px; padding-right: 20px;">
+    <table class="table table-striped">
+        <tr>
+            <th>投注</th>
+            <th>中獎</th>
+            <th>活動</th>
+            <th>充值</th>
+            <th>提現</th>
+            <th>返點</th>
+            <th>日工資</th>
+            <th>三方返點</th>
+            <th>三方平台費</th>
+            <th>淨輸贏</th>
+        </tr>
+            <tr>
+                {% for data in total_list %}
+                    <td>{{ data }}</td>
+                {% endfor %}
+            </tr>
+    </table>
+</div>
+
+<p style="padding-left: 50px; padding-right: 20px;"> 彩票 </p>
+<div class="total_result" style="padding-left: 20px; padding-right: 20px;">
+    <table class="table table-striped">
+        <tr>
+            <th>投注</th>
+            <th>中獎</th>
+            <th>活動</th>
+            <th>充值</th>
+            <th>提現</th>
+            <th>返點</th>
+            <th>日工資</th>
+            <th>淨輸贏</th>
+        </tr>
+            <tr>
+                {% for data in fh_list %}
+                    <td>{{ data }}</td>
+                {% endfor %}
+            </tr>
+    </table>
+</div>
+
+<p style="padding-left: 50px; padding-right: 20px;"> 三方 </p>
+<div class="total_result" style="padding-left: 20px; padding-right: 20px;">
+    <table class="table table-striped">
+        <tr>
+            <th>投注</th>
+            <th>中獎</th>
+            <th>活動</th>
+            <th>充值</th>
+            <th>提現</th>
+            <th>三方返點</th>
+            <th>三方平台費</th>
+            <th>淨輸贏</th>
+        </tr>
+            <tr>
+                {% for data in third_list %}
+                    <td>{{ data }}</td>
+                {% endfor %}
+            </tr>
+    </table>
+</div>
+
+</br>
+</br>
+<p style="padding-left: 50px; padding-right: 20px;">注意事項:</p>
+<p style="padding-left: 70px; padding-right: 20px;">1. 此頁面為即時數據，前台排程為每小時的25分執行</p>
+<p style="padding-left: 70px; padding-right: 20px;">2. 新創用戶上下級關係，需等待排程每小時的20分更新(更新前無法撈取新創用戶資料)</p>
+<a href="https://docs.google.com/spreadsheets/d/1JSxXRh4q44pXtLOTTqoOtsy1Yxbx52avxXXFc8yMSN0/edit#gid=1667801465/" target="_blank" style="padding-left: 70px; padding-right: 20px;">3. 代理中心指標</a>
+
+
+</body>
