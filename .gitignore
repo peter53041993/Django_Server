@@ -1,0 +1,6 @@
+tutorial/db.sqlite3
+*.yaml
+*.dll
+tutorial/snippets/FF_/chromedriver.exe
+tutorial/requirements.txt
+tutorial/Dockerfile
