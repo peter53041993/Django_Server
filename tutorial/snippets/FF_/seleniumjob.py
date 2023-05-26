@@ -19,6 +19,7 @@ import cx_Oracle
 from .superdatagenerator import Super2000Data
 from selenium.webdriver.chrome.options import Options
 from faker import Factory, Faker
+from webdriver_manager.chrome import ChromeDriverManager
 
 # ChromeDriver 設定參數
 chrome_options = Options()
@@ -27,11 +28,12 @@ chrome_options.add_argument("--start-maximized")  # 全螢幕
 
 class AutoFrontTools:
     def __init__(self) -> None:
-        self.dr = webdriver.Chrome(
-            executable_path=r'C:\\Users\\Peter\\Documents\\drf_test\\tutorial\\snippets\\FF_\\chromedriver',
-            #executable_path='./chromedriver',
-            chrome_options=chrome_options
-            )
+        # self.dr = webdriver.Chrome(
+        #     executable_path=r'C:\\Users\\Peter\\Documents\\drf_test\\tutorial\\snippets\\FF_\\chromedriver',
+        #     #executable_path='./chromedriver',
+        #     chrome_options=chrome_options
+        #     )
+        self.dr = webdriver.Chrome(ChromeDriverManager().install())
         self.id_ = self.dr.find_element_by_id
         self.xpath = self.dr.find_element_by_xpath
         self.class_ = self.dr.find_element_by_class_name

@@ -149,14 +149,14 @@ class UbitFrontApiTest:
         r = self.session.get('http://api.ubitdev.com/user/info', headers=self.user_headers)
         return r.json()
 
-    def addPayment(self, account: str, type: int):
+    def addPayment(self, account: str, bindType: int):
         self.sentVerify(886, 222222222, 6)
 
         data = {
             "bankAccount": account,
             "bankName": "string",
             "bankNumber": "string",
-            "bindCardType": 0,
+            "bindCardType": bindType,
             "branchName": "string",
             "googleVerifyCode": "string",
             "phoneVerifyCode": "string",

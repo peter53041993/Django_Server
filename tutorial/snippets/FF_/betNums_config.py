@@ -372,7 +372,7 @@ class BetNumsConfig:
         ]
 
         self.nums4 = [
-            '62_45_10'
+            '62_45_10', '67_75_112', '67_75_113', '67_76_114', '67_76_115'
         ]
 
         self.nums2 = [
@@ -380,54 +380,9 @@ class BetNumsConfig:
         ]
 
         self.shuangmian = [
-            '67_75_112', '67_75_113', '67_76_114', '67_76_115', '67_76_116'
+            '67_76_116'
         ]
 
-    def checkNuns11(self, betContent: str) -> float:
-        bet = betContent.split(',')
-        max_ratio = 0
-        for slip in bet:
-            s = slip.split(' ')
-            if s != ['_']:
-                ratio = len(s)/11
-                max_ratio = max(max_ratio, ratio)
-        return round(max_ratio, 6)
-    
-    def checkNuns10(self, betContent):
-        bet = betContent.split(',')
-        max_ratio = 0
-        for slip in bet:
-            if slip != '_':
-                ratio = len(slip)/10
-                max_ratio = max(max_ratio, ratio)
-        return round(max_ratio, 6)
-    
-    def checkNuns4(self, betContent):
-        if not betContent:
-            return None
-
-        check = {}
-        for slip in betContent:
-            key, value = slip[:-1], slip[-1:]
-            if key not in check:
-                check[key] = set(value)
-            else:
-                check[key].add(value)
-        
-        max_ratio = 0
-        for k, v in check.items():
-            ratio = len(v)/4
-    
-    def checkNuns2(self, betContent):
-        ...
-
 if __name__ == '__main__':
-    betContent = '012789,5,56,578,-,-'
+    pass
 
-    print(BetNumsConfig().checkNuns10(betContent))
-    import collections
-    res = collections.defaultdict(int)
-
-    for i in range(10):
-        res['r'] += 0
-    print(res)

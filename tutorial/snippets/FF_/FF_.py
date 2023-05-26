@@ -21,16 +21,16 @@ class Lottery:
         self.lottery_dict = {
         'cqssc':[u'重慶','99101'],'xjssc':[u'新彊時彩','99103'],'tjssc':[u'天津時彩','99104'],'hljssc':[u'黑龍江','99105'],'llssc':[u'樂利時彩','99106'],'shssl':[u'上海時彩','99107'],'jlffc':[u'吉利分彩','99111'],'slmmc':[u'順利秒彩','99112'],'txffc':[u'騰訊分彩','99114'],'btcffc':[u'比特幣分彩','99115'],'fhjlssc':[u'吉利時彩','99116'],'sd115':[u'山東11選5','99301'],'jx115':[u"江西11選5",'99302'],'gd115':[u'廣東11選5','99303'],'sl115':[u'順利11選5','99306'],'jsk3':[u'江蘇快3','99501'],'ahk3':[u'安徽快3','99502'],'jsdice':[u'江蘇骰寶','99601'],'jldice1':[u'吉利骰寶(娛樂)','99602'],'jldice2':[u'吉利骰寶(至尊)','99603'],'fc3d':[u'3D','99108'],'p5':[u'排列5','99109'],'lhc':[u'六合彩','99701'],'btcctp':[u'快開','99901'],'pk10':[u"pk10",'99202'],'v3d':[u'吉利3D','99801'], 'xyft':[u'幸運飛艇','99203'],'fhxjc':[u'鳳凰新疆','99118'],'fhcqc':[u'鳳凰重慶','99117'],'n3d':[u'越南3d','99124'],'np3':[u'越南福利彩','99123'],'pcdd':[u'PC蛋蛋','99204'],'xyft168':[u'幸運飛艇168','99205'], 'fckl8':[u'福彩快樂8','99206'],'ptxffc':[u'奇趣腾讯分分彩','99125'],'hn60':[u'多彩河内分分彩','99126'],'hnffc':[u'河内分分彩','99119'],'hn5fc':[u'河内五分彩','99120'],'tmffc':['天貓分分彩','99127'],
         'tm3fc': ['天貓三分彩','99128'], 'tm5fc': ['天貓五分彩','99129'],
-        'super2000': ['超級2000App','99113']}
+        'super2000': ['超級2000App','99113'], 'xy3d': [u'幸运3D', '99130'], 'xypl5': [u'幸运排列3/5', '99131']}
 
         self.lottery_sh = ['cqssc','xjssc','tjssc','hljssc','llssc','jlffc','slmmc','txffc','fhjlssc','btcffc','fhcqc','fhxjc','hnffc','hn5fc','hn60','ptxffc','tmffc','tm3fc','tm5fc']
         self.lottery_sh2000 = ['cqssc','xjssc','tjssc','hljssc','fhjlssc','fhcqc','fhxjc','hn5fc','super2000','tm5fc']
-        self.lottery_3d = ['v3d']
+        self.lottery_3d = ['v3d', 'xy3d', ]
         self.lottery_115 = ['sd115','jx115','gd115','sl115']
         self.lottery_k3 = ['ahk3','jsk3']
         self.lottery_sb = ['jsdice',"jldice1",'jldice2']
         self.lottery_fun = ['pk10','xyft','xyft168']
-        self.lottery_noRed = ['fc3d','n3d','np3','p5']#沒有紅包
+        self.lottery_noRed = ['fc3d','n3d','np3','p5','xypl5']#沒有紅包
         
         self.LotterySsh_group = {'wuxing':{'zhixuan':['fushi'],
             'zuxuan':['zuxuan120','zuxuan60','zuxuan30','zuxuan20','zuxuan10''zuxuan5'],

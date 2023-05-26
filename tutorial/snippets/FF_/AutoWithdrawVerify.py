@@ -62,7 +62,7 @@ class AutoWithdrawVerify:
         self.prevCharge = None
         self.claen_point = self.getCleanPoint()
         self.rule12ManualPass = self.checkPeriodWithdrawLimitFlag()
-        self.config = self.getConfig()
+        self.config = self.getHistoryConfig()
 
     def oracle(self, env: int) -> cx_Oracle:
         '''
@@ -222,7 +222,12 @@ class AutoWithdrawVerify:
                 old_point = datetime.fromtimestamp(timestamps)
             betToZero = old_point
 
-        if betToZero:
+        if betToZero and prevWithDraw:
+            if betToZero > prevWithDraw:
+                return betToZero
+            else:
+                return prevWithDraw
+        elif betToZero:
             return betToZero
         elif prevWithDraw:
             return prevWithDraw
@@ -434,7 +439,7 @@ class AutoWithdrawVerify:
                     FUND_CHANGE_LOG fcl 
                 WHERE 
                     fcl.USER_ID = {self.account}
-                    AND fcl.REASON IN ('PM,PGXX,null,4', 'PM,PGXX,null,5', 'PM,TAAM,null,3')
+                    AND fcl.REASON IN ('PM,PGXX,null,4', 'PM,PGXX,null,5', 'PM,TAAM,null,3', 'PM,PGXX,null,3')
                     AND fcl.GMT_CREATED >= TO_TIMESTAMP('{startTime}', 'YYYY-MM-DD HH24:MI:SS')
                     AND fcl.GMT_CREATED < TO_TIMESTAMP('{endTime}', 'YYYY-MM-DD HH24:MI:SS')
         '''
@@ -482,7 +487,8 @@ class AutoWithdrawVerify:
         amount_limit = float(self.config['LARGE_AMOUNT']['limit'])
 
         sql = f'''SELECT 
-                    NVL(fw.WITHDRAW_AMT/10000, 0)
+                    (CASE WHEN fw.IS_SEPERATE = 'N' THEN NVL(fw.WITHDRAW_AMT/10000, 0)
+	                ELSE (SELECT SUM(NVL(WITHDRAW_AMT/10000, 0)) FROM FUND_WITHDRAW WHERE ROOT_SN = fw.ROOT_SN) END) AS　"Amount"
                 FROM 
                     FUND_WITHDRAW fw 
                 WHERE 
@@ -514,7 +520,7 @@ class AutoWithdrawVerify:
                             AND fw.APPLY_TIME < TO_TIMESTAMP('{endTime}', 'YYYY-MM-DD HH24:MI:SS')
         '''
         sql_curBindType = f'''SELECT 
-                            fw.USER_BANK_STRUC, NVL((fw.WITHDRAW_AMT/10000), 0)
+                            fw.USER_BANK_STRUC, NVL((fw.WITHDRAW_AMT/10000)/EXCHANGE_RATE, 0)
                         FROM 
                             FUND_WITHDRAW fw 
                         WHERE 
@@ -575,7 +581,7 @@ class AutoWithdrawVerify:
         conn.close()
 
         if not prev:
-            return False
+            return True
         return json.loads(prev[0][0])['id'] == json.loads(cur[0][0])['id'] 
 
     # Rule8: X 天内提款账号信息有过变更用户
@@ -679,7 +685,7 @@ class AutoWithdrawVerify:
                             FUND_CHANGE_LOG fcl 
                         WHERE 
                             fcl.USER_ID = {self.account}
-                            AND fcl.REASON IN ('PM,TAAM,null,3','PM,PGXX,null,3','PM,IPXX,null,3','TF,BIRX,null,2','OT,CEXX,null,3','OT,AAXX,null,3','GM,DDAX,null,1','PM,PMXX,null,3','PM,TSVA,null,3','OT,PCXX,null,3',
+                            AND fcl.REASON IN ('PM,TAAM,null,3','PM,PGXX,null,3','PM,IPXX,null,3','TF,BIRX,null,2','OT,CEXX,null,3','OT,AAXX,null,3','GM,DDAX,null,1','PM,PMXX,null,3','PM,TSVA,null,3','PM,TSVA,null,1','OT,PCXX,null,3',
                             'TF,DLSY,null,1','TF,MLDD,null,1','TF,TADS,null,3','TF,ZDYJ,null,1','PM,AADS,null,3','PM,AAMD,null,3','TF,LMLD,null,1','TF,DABR,null,1','TF,DTWR,null,3','TF,XFYJ,null,1','GM,SFYJ,null,1',
                             'GM,SFFS,null,1','HB,AHBC,null,1','PM,RHYB,null,3','PM,RHYB,null,4','PM,RHYB,null,5','PM,RHYB,null,6','PM,RHYB,null,7','PM,RHYB,null,8','PM,RHYB,null,9','PM,SVUR,null,1','PM,SVUR,null,2',
                             'GM,RHAX,null,2')
@@ -708,9 +714,7 @@ class AutoWithdrawVerify:
     #         2、梭哈（下注金额超过>=金额 X% 以上）
     def newUserAndShowHand(self):
         limit_charges_times = int(self.config['SHOW_HAND']['count'])
-        ratio = float(self.config['SHOW_HAND']['percentage'])/100
 
-        startTime = self.claen_point.strftime('%Y-%m-%d %H:%M:%S')
         endTime = self.end_time.strftime('%Y-%m-%d %H:%M:%S')
 
         sql_chargeTimes = f'''SELECT 
@@ -720,62 +724,20 @@ class AutoWithdrawVerify:
                         WHERE 
                             fc.USER_ID = {self.account}
                             AND fc.STATUS = 2
-                            AND fc.APPLY_TIME >= TO_TIMESTAMP('{startTime}', 'YYYY-MM-DD HH24:MI:SS')
                             AND fc.APPLY_TIME < TO_TIMESTAMP('{endTime}', 'YYYY-MM-DD HH24:MI:SS')
-        '''
-        sql_bet = f'''SELECT  
-                    NVL(MAX(TOTAMOUNT-TOTAL_RED_DISCOUNT)/10000, 0)
-                FROM 
-                    GAME_ORDER
-                WHERE
-                    USERID = {self.account}
-                    and ORDER_TIME >= TO_TIMESTAMP('{startTime}', 'YYYY-MM-DD HH24:MI:SS')
-                    and ORDER_TIME < TO_TIMESTAMP('{endTime}', 'YYYY-MM-DD HH24:MI:SS')
-        '''
-        sql_prevCharge = f'''SELECT 
-                            NVL(fc.REAL_CHARGE_AMT/10000, 0)
-                        FROM
-                            FUND_CHARGE fc 
-                        WHERE 
-                            fc.USER_ID = {self.account}
-                            AND fc.STATUS = 2
-                            AND fc.APPLY_TIME >= TO_TIMESTAMP('{startTime}', 'YYYY-MM-DD HH24:MI:SS')
-                            AND fc.APPLY_TIME < TO_TIMESTAMP('{endTime}', 'YYYY-MM-DD HH24:MI:SS')
-                        ORDER BY
-                            fc.APPLY_TIME DESC
         '''
         conn = self.oracle(self.env)
         with conn.cursor() as cursor:
             cursor.execute(sql_chargeTimes)
             rows = cursor.fetchall()[0]
             charge_times = rows[0]
-            charge_amount = rows[1]
-
-            cursor.execute(sql_bet)
-            bet_amount = cursor.fetchall()[0][0]
-
-            cursor.execute(sql_prevCharge)
-            rows = cursor.fetchall()
-            if rows:
-                prevCharge = rows[0][0]
-            else:
-                prevCharge = 0
         conn.close()
-        if self.betToZero or self.prevWithDraw:
-            charge = prevCharge
-        else:
-            charge = charge_amount
+        
 
         return {
-            'result': True if charge_times<limit_charges_times and bet_amount>=charge*ratio else False,
+            'result': True if charge_times <= limit_charges_times else False,
             'charge_times': charge_times,
             'limit_charges_times': limit_charges_times,
-            'charge': charge,
-            'charge_amount': charge_amount,
-            'prevCharge': prevCharge,
-            'bet_amount': bet_amount,
-            'ratio': ratio,
-            'startTime': startTime,
             'endTime': endTime
         }
     
@@ -785,16 +747,22 @@ class AutoWithdrawVerify:
         limit_times = int(self.config['WITHDRAW_COUNT_LIMIT']['count'])
         startTime = self.end_time.strftime('%Y-%m-%d')
         endTime = self.end_time.strftime('%Y-%m-%d %H:%M:%S')
+        # 須計入自身這筆提現，結束時間+1秒
+        useEndTime = (self.end_time+relativedelta(seconds=1)).strftime('%Y-%m-%d %H:%M:%S')
+
         sql = f'''SELECT 
-                    count(ID),
-                    NVL(SUM(fw.REAL_WITHDRAL_AMT)/10000, 0)
-                FROM 
-                    FUND_WITHDRAW fw 
-                WHERE 
-                    fw.USER_ID = {self.account}
-                    AND fw.STATUS = 4
-                    AND fw.APPLY_TIME >= TO_TIMESTAMP('{startTime} 00:00:00', 'YYYY-MM-DD HH24:MI:SS') 
-                    AND fw.APPLY_TIME < TO_TIMESTAMP('{endTime}', 'YYYY-MM-DD HH24:MI:SS')
+                    count(0), NVL(SUM(g."amount"), 0)
+                FROM
+                    (SELECT 
+                        NVL(SUM(fw.REAL_WITHDRAL_AMT)/10000, 0) AS "amount"
+                    FROM 
+                        FUND_WITHDRAW fw 
+                    WHERE 
+                        fw.USER_ID = {self.account}
+                        AND fw.APPLY_TIME >= TO_TIMESTAMP('{startTime} 00:00:00', 'YYYY-MM-DD HH24:MI:SS') 
+                        AND fw.APPLY_TIME < TO_TIMESTAMP('{useEndTime}', 'YYYY-MM-DD HH24:MI:SS')
+                    GROUP BY
+                        fw.ROOT_SN) g
         '''
         conn = self.oracle(self.env)
         with conn.cursor() as cursor:
@@ -978,23 +946,31 @@ class AutoWithdrawVerify:
         startTime = self.claen_point.strftime('%Y-%m-%d %H:%M:%S')
         endTime = self.end_time.strftime('%Y-%m-%d %H:%M:%S')
 
-        sql = f'''SELECT 
+        sql = f'''SELECT
                     gs.LOTTERYID, gs.ISSUE_CODE, gs.BET_TYPE_CODE, SUM(TOTBETS),
                     (SELECT LOTTERY_NAME FROM GAME_SERIES WHERE LOTTERYID = gs.LOTTERYID),
                     (SELECT 
-		                GROUP_CODE_TITLE||SET_CODE_TITLE||METHOD_CODE_TITLE 
-	                FROM 
-		                GAME_BETTYPE_STATUS gbs 
-	                WHERE 
-		                gbs.BET_TYPE_CODE = gs.BET_TYPE_CODE AND ROWNUM = 1)
+                        GROUP_CODE_TITLE||SET_CODE_TITLE||METHOD_CODE_TITLE 
+                    FROM 
+                        GAME_BETTYPE_STATUS gbs 
+                    WHERE 
+                        gbs.BET_TYPE_CODE = gs.BET_TYPE_CODE AND ROWNUM = 1)
                 FROM 
                     GAME_SLIP gs 
                 WHERE 
-                    gs.USERID  = {self.account}
-                    AND gs.STATUS  = 2
-                    AND gs.CREATE_TIME >= TO_TIMESTAMP('{startTime}', 'YYYY-MM-DD HH24:MI:SS')
-                    AND gs.CREATE_TIME < TO_TIMESTAMP('{endTime}', 'YYYY-MM-DD HH24:MI:SS')
-                GROUP BY 
+                    gs.LOTTERYID||gs.ISSUE_CODE||gs.BET_TYPE_CODE IN
+                    (SELECT 
+                        gs.LOTTERYID||gs.ISSUE_CODE||gs.BET_TYPE_CODE
+                    FROM 
+                        GAME_SLIP gs 
+                    WHERE 
+                        gs.USERID  = {self.account}
+                        AND gs.STATUS = 2
+                        AND gs.CREATE_TIME >= TO_TIMESTAMP('{startTime}', 'YYYY-MM-DD HH24:MI:SS')
+                        AND gs.CREATE_TIME < TO_TIMESTAMP('{endTime}', 'YYYY-MM-DD HH24:MI:SS')
+                    GROUP BY 
+                        gs.LOTTERYID, gs.ISSUE_CODE, gs.BET_TYPE_CODE)
+                GROUP BY
                     gs.LOTTERYID, gs.ISSUE_CODE, gs.BET_TYPE_CODE
         '''
         conn = self.oracle(self.env)
@@ -1003,46 +979,55 @@ class AutoWithdrawVerify:
             rows = cursor.fetchall()
         conn.close()
 
-
         betNumsConfig = BetNumsConfig()
-        res = False
         trigger = []
         if rows:
             for slip in rows:
                 lotteryId, issueCode, betTypeCode, totBets, lotteryName, betTypeName = slip
+                betConent = self.getExceptBet(lotteryId, issueCode, betTypeCode)
                 if betTypeCode in betNumsConfig.exception:
                     pass
                 elif betTypeCode in betNumsConfig.nums11:
-                    ...
+                    bet_ratio = self.checkNums11(betConent)
+                    if bet_ratio > ratio:
+                        trigger.append([lotteryName, issueCode, betTypeName, bet_ratio])
                 elif betTypeCode in betNumsConfig.nums10:
-                    ...
+                    bet_ratio = self.checkNums10(betConent)
+                    if bet_ratio > ratio:
+                        trigger.append([lotteryName, issueCode, betTypeName, bet_ratio])
                 elif betTypeCode in betNumsConfig.nums4:
-                    ...
+                    bet_ratio = self.checkNums4(betConent)
+                    if bet_ratio > ratio:
+                        trigger.append([lotteryName, issueCode, betTypeName, bet_ratio])
                 elif betTypeCode in betNumsConfig.nums2:
-                    ...
+                    bet_ratio = self.checkNums2(betConent)
+                    if bet_ratio > ratio:
+                        trigger.append([lotteryName, issueCode, betTypeName, bet_ratio])
                 elif betTypeCode in betNumsConfig.shuangmian:
-                    ...
+                    bet_ratio = self.checkShuangmian10(betConent)
+                    if bet_ratio > ratio:
+                        trigger.append([lotteryName, issueCode, betTypeName, bet_ratio])
                 else:
                     limitBet = betNumsConfig.betNumsConfig[betTypeCode]
                     if totBets > limitBet*ratio:
                         trigger.append([lotteryName, issueCode, betTypeName, totBets, limitBet])
-                        res = True
+                        
         
         return {
-            'result': res,
+            'result': True if trigger else False,
             'trigger': trigger,
             'ratio': ratio,
             'startTime': startTime,
             'endTime': endTime
         }
 
-    def getExceptBetTypeSlip(self, account, lotteryId, issueCode, betTypeCode):
+    def getExceptBet(self, lotteryId: int, issueCode: int, betTypeCode: str) -> list:
         sql = f'''SELECT 
                     DISTINCT(gs.BET_DETAIL)
                 FROM 
                     GAME_SLIP gs
                 WHERE 
-                    gs.USERID  = {account}
+                    gs.USERID  = {self.account}
                     AND gs.LOTTERYID = {lotteryId}
                     AND gs.ISSUE_CODE = {issueCode}
                     AND gs.BET_TYPE_CODE = '{betTypeCode}'
@@ -1050,22 +1035,91 @@ class AutoWithdrawVerify:
         conn = self.oracle(self.env)
         with conn.cursor() as cursor:
             cursor.execute(sql)
-            rows = cursor.fetchall()
+            betContent = cursor.fetchall()
         conn.close()
+        return [d[0] for d in betContent]
+    
+    def checkNums11(self, betContent: list) -> float:        
+        check = [set() for _ in range(5)]
 
-        if betTypeCode in ['67_75_112', '67_75_113']:
-            return {'result': len(rows)}
+        for content in betContent:
+            slip = content.split(',')
+            for i in range(len(slip)):
+                nums = slip[i]
+                for n in nums:
+                    if n != '-' and n != ' ':
+                        check[i].add(n)
 
-        res = collections.defaultdict(int)
-        for data in rows:
-            slip = data[0]
-            key = slip[:-1]
-            res[key] += 1
-        return res
+        return round(max([len(d) for d in check])/11, 6)
+    
+    def checkNums10(self, betContent):
+        check = [set() for _ in range(5)]
+
+        for content in betContent:
+            slip = content.split(',')
+            for i in range(len(slip)):
+                nums = slip[i]
+                for n in nums:
+                    if n != '-' and n != ' ':
+                        check[i].add(n)
+        
+        return round(max([len(d) for d in check])/10, 6)
+    
+    def checkNums4(self, betContent):
+        check = {}
+
+        for content in betContent:
+            pre_key = content[:-1]
+            val = content[-1]
+            sub_key = '大小' if val in '大小' else '单双'
+
+            key = pre_key+sub_key
+            if key not in check:
+                check[key] = set(val)
+            else:
+                check[key].add(val)
+        
+        for v in check.values():
+            cur = len(v)
+            if cur == 2:
+                return 1
+        return 0.5
+
+    
+    def checkNums2(self, betContent):
+        check = {}
+
+        for content in betContent:
+            key = content[:-1]
+            val = content[-1]
+            if key not in check:
+                check[key] = set(val)
+            else:
+                check[key].add(val)
+        
+        for v in check.values():
+            cur = len(v)
+            if cur == 2:
+                return 1
+        return 0.5
+    
+    def checkShuangmian10(self, betContent: list) -> float:
+        check = {}
+
+        for content in betContent:
+            key = content[:-1]
+            val = content[-1]
+
+            if key not in check:
+                check[key] = set(val)
+            else:
+                check[key].add(val)
+        
+        return round(max([len(d) for d in check.values()])/10, 6)
             
     # Rule16: 三个月未登录用户
-    def silentUser(self):
-        startTime = (self.end_time-relativedelta(months=6)).strftime('%Y-%m-%d %H:%M:%S')
+    def silentUser_prev(self): # 登入時間(原版)
+        startTime = (self.end_time-relativedelta(days=180)).strftime('%Y-%m-%d %H:%M:%S')
         endTime = self.end_time.strftime('%Y-%m-%d %H:%M:%S')
         sql_userLogin = f'''SELECT 
                             ull.LOGIN_DATE
@@ -1076,22 +1130,37 @@ class AutoWithdrawVerify:
                             AND ull.LOGIN_DATE >= TO_TIMESTAMP('{startTime}', 'YYYY-MM-DD HH24:MI:SS')
                             AND ull.LOGIN_DATE < TO_TIMESTAMP('{endTime}', 'YYYY-MM-DD HH24:MI:SS')
                         ORDER BY
-                            ull.LOGIN_DATE
+                            ull.LOGIN_DATE DESC
+        '''
+
+        sql_register = f'''SELECT 
+                            REGISTER_DATE 
+                        FROM 
+                            USER_CUSTOMER
+                        WHERE
+                            ID = {self.account}
         '''
         conn = self.oracle(self.env)
         with conn.cursor() as cursor:
             cursor.execute(sql_userLogin)
             rows = cursor.fetchall()
+
+            cursor.execute(sql_register)
+            registerDate = cursor.fetchall()[0][0]
         conn.close()
         
+        
+        baseDate = (self.end_time-relativedelta(days=180)) if registerDate < (self.end_time-relativedelta(months=6)) else registerDate
         res = False
         period = []
+
         if rows:
+            rows.append((baseDate,))
             for i in range(1, len(rows)):
                 if rows[i][0]+relativedelta(days=90) < rows[i-1][0]:
                     res = True
                     period.append(rows[i][0].strftime('%Y-%m-%d %H:%M:%S'))
-                    period.append(rows[i][1].strftime('%Y-%m-%d %H:%M:%S'))
+                    period.append(rows[i-1][0].strftime('%Y-%m-%d %H:%M:%S'))
                     break
         
         return {
@@ -1100,6 +1169,143 @@ class AutoWithdrawVerify:
             'startTime': startTime,
             'endTime':endTime
         }
+
+    def silentUser(self):
+        startTime = (self.end_time-relativedelta(days=180)).strftime('%Y-%m-%d %H:%M:%S')
+        endTime = self.end_time.strftime('%Y-%m-%d %H:%M:%S')
+
+        sql_third = f'''SELECT 
+	                ctbr.SEQ_ID
+                FROM 
+	                COLLECT_THIRDLY_BET_RECORD ctbr 
+                WHERE
+	                ctbr.USER_ID = {self.account} 
+                    AND ctbr.THIRDLY_BET_TIME >= TO_TIMESTAMP('{startTime}', 'YYYY-MM-DD HH24:MI:SS')
+                    AND ctbr.THIRDLY_BET_TIME < TO_TIMESTAMP('{endTime}', 'YYYY-MM-DD HH24:MI:SS')
+        '''
+
+        sql_bet = f'''SELECT 
+                        ID
+                    FROM 
+                        GAME_ORDER go2 
+                    WHERE 
+                        go2.USERID  = {self.account}
+                        AND go2.ORDER_TIME >= TO_TIMESTAMP('{startTime}', 'YYYY-MM-DD HH24:MI:SS')
+                        AND go2.ORDER_TIME < TO_TIMESTAMP('{endTime}', 'YYYY-MM-DD HH24:MI:SS')
+        '''
+
+        conn = self.oracle(self.env)
+        with conn.cursor() as cursor:
+            cursor.execute(sql_third)
+            third = cursor.fetchall()
+            
+            cursor.execute(sql_bet)
+            bet = cursor.fetchall()
+        conn.close()
+
+        return {
+            'result': True if not third and not bet else False,
+            'third': True if third else False,
+            'bet': True if bet else False,
+            'startTime': startTime,
+            'endTime':endTime
+        }
+
+    def _getHistoryConfigValue(self, rule: int, configType: int) -> Union[int, str]:
+        '''
+        parm: rule 1-16
+        parm: type 0 switch/ 1 value
+        '''
+
+        applyTime = self.end_time.strftime('%Y-%m-%d %H:%M:%S')
+        typeDict = {0: '开关', 1: '内容'}
+        sql = f'''SELECT 
+                    AFTER_VALUE
+                FROM 
+                    FUND_WITHDRAW_CHECK_CONFIG_LOG fwccl
+                WHERE
+                    fwccl.NAME = '规则{rule}{typeDict[configType]}' AND fwccl.AUDIT_TIME < TO_TIMESTAMP('{applyTime}', 'YYYY-MM-DD HH24:MI:SS')
+                ORDER BY
+                    AUDIT_TIME DESC
+        '''
+        conn = self.oracle(self.env)
+        with conn.cursor() as cursor:
+            cursor.execute(sql)
+            config = cursor.fetchall()    
+        conn.close()
+
+        if not config:
+            return None
+        return config[0][0]
+    
+    def getHistoryConfig(self) -> dict:
+        config = {
+            "PLAYED_THIRD":{
+                "enable": int(self._getHistoryConfigValue(1, 0))
+                },
+            "BET_REQUIRED":{
+                "enable": int(self._getHistoryConfigValue(2, 0)),
+                "times": float(self._getHistoryConfigValue(2, 1)[12:-1])
+                },
+            "BLACK_LIST":{
+                "enable": int(self._getHistoryConfigValue(3, 0))
+                },
+            "JOINED_ACTIVITY":{
+                "enable": int(self._getHistoryConfigValue(4, 0))
+                },
+            "RISK_TAGGED":{
+                "enable": int(self._getHistoryConfigValue(5, 0))
+                },
+            "LARGE_AMOUNT":{
+                "enable": int(self._getHistoryConfigValue(6, 0)),
+                "limit": float(self._getHistoryConfigValue(6, 1)[11:-1])
+                },
+            "FIRST_TIME_USDT":{
+                "enable": int(self._getHistoryConfigValue(7, 0)),
+                "limit": float(self._getHistoryConfigValue(7, 1)[15:-4])
+                },
+            "CARD_INFO_CHANGED":{
+                "enable": int(self._getHistoryConfigValue(8, 0)),
+                "days": int(self._getHistoryConfigValue(8, 1)[:-14])
+                },
+            "NO_RECHARGE":{
+                "enable": int(self._getHistoryConfigValue(9, 0)),
+                "limit": float(self._getHistoryConfigValue(9, 1)[15:-4])
+                },
+            "SHOW_HAND":{
+                "enable": int(self._getHistoryConfigValue(10, 0)),
+                "count": int(self._getHistoryConfigValue(10, 1).split(' ')[2]),
+                },
+            "WITHDRAW_COUNT_LIMIT":{
+                "enable": int(self._getHistoryConfigValue(11, 0)),
+                "count": int(self._getHistoryConfigValue(11, 1).split(' ')[1]),
+                "amount": float(self._getHistoryConfigValue(11, 1).split(' ')[3])
+                },
+            "WITHDRAW_AMOUNT_LIMIT":{
+                "enable": int(self._getHistoryConfigValue(12, 0)),
+                "days": int(self._getHistoryConfigValue(12, 1).split(' ')[0]),
+                "amount": float(self._getHistoryConfigValue(12, 1).split(' ')[2])
+                },
+            "WITHDRAW_RECHARGE_RATIO":{
+                "enable": int(self._getHistoryConfigValue(13, 0)),
+                "times": float(self._getHistoryConfigValue(13, 1).split(' ')[2]),
+                "amount": float(self._getHistoryConfigValue(13, 1).split(' ')[5])
+                },
+            "WIN_BET_RATIO":{
+                "enable": int(self._getHistoryConfigValue(14, 0)),
+                "times": float(self._getHistoryConfigValue(14, 1).split(' ')[2]),
+                "amount": float(self._getHistoryConfigValue(14, 1).split(' ')[5])
+                },
+            "MOST_COMBINATION":{
+                "enable": int(self._getHistoryConfigValue(15, 0)),
+                "percentage": float(self._getHistoryConfigValue(15, 1).split(' ')[1][:-1])
+                },
+            "INACTIVE_USER":{
+                "enable": int(self._getHistoryConfigValue(16, 0))
+                }
+        }
+
+        return config
 
     def ruleCheck(self) -> dict:
         switch = []

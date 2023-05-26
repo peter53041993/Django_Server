@@ -1140,12 +1140,18 @@ class MysqlConnection:
                       'im': ['imadmin', ['D97W#$gdh=b39jZ7Px', 'nxDe2yt7XyuZ@CcNSE'], 'ff_im'],
                       'shaba': ['sbadmin', ['UHRkbvu[2%N=5U*#P3JR', 'aR8(W294XV5KQ!Zf#"v9'], 'ff_sb'],
                       'bbin': ['bbinadmin', 'Csyh*P#jB3y}EyLxtg', 'ff_bbin'],
-                      'gns': ['gnsadmin', 'Gryd#aCPWCkT$F4pmn', 'ff_gns']
+                      'gns': ['gnsadmin', 'Gryd#aCPWCkT$F4pmn', 'ff_gns'],
+                      'ubit_stg': ['rd_user', 'Sxae4Z93BDfcDUDR', 'ubit'],
+                      'tgbet_stg': ['tgbetrd', 'AbM4pp8k#6tXa9mcg', 'tgbet']
                       }
         if self._env_id == 0:  # dev
             ip = '10.13.22.151'
         elif self._env_id == 1:  # 188
             ip = '10.6.32.147'
+        elif self._env_id == 3:
+            ip = '54.150.197.171' # ubit_stg
+        elif self._env_id == 4:
+            ip = '13.112.237.35' # tg_bet_stg
         else:
             raise Exception('evn 錯誤')
 
@@ -1155,6 +1161,8 @@ class MysqlConnection:
         if third == 'gns':  # gns只有一個 測試環境
             password_ = third_dict[third][1]
             ip = '10.6.32.147'  # gns Db 只有 188
+        elif self._env_id in [3, 4]:
+            password_ = third_dict[third][1]
         else:
             password_ = third_dict[third][1][self._env_id]
 
@@ -1196,6 +1204,31 @@ class MysqlConnection:
         self.get_mysql_conn(third).commit()
         cur.close()
         return result
+    
+    def getGoogleAutKey(self, third: str, user: str, user_type: int):
+        conn = self.get_mysql_conn(third)
+        try:
+            cursor = conn.cursor()
+            search_table = {
+                0: ('user_info', 'id', 'google_code'),
+                1: ('admin_user_info', 'account', 'google_auth_secret'),
+                2: ('merchant_admin_user_info', 'name', 'google_auth_secret'),
+            }
+            table, col_name, traget_name = search_table[user_type]
+            sql = f'''select 
+                        {traget_name}
+                    from 
+                        {table}
+                    where 
+                        {col_name} = '{user}'
+            '''
+            cursor.execute(sql)
+            key = cursor.fetchone()
+            cursor.close()
+            return key[0] if key else None
+        finally:
+            conn.close()
+
 
     def close_conn(self):
         if self._conn is not None:
