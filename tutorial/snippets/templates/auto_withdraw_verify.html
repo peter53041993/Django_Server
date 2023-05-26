@@ -117,6 +117,7 @@
 
 
 <div style="padding-left: 30px;">{{ stopRule }}</div>
+<div style="padding-left: 30px;">開關與參數依審核時狀態顯示</div>
 <div class="result" style="padding-left: 20px; padding-right: 20px;">
     <table class="table table-striped">
         <tr>
@@ -213,7 +214,7 @@
                 0: 銀行卡 1: 支付寶 2: 數字錢包<br>
                 充值類型: {{verifyRrsult.7.whithType}}<br>
                 是否有過USDT提款: {{verifyRrsult.7.withInPast}}<br>
-                限制金額 : {{verifyRrsult.7.limit_amount}} <br>
+                限制金額 : {{verifyRrsult.7.limit_amount}} USDT<br>
                 提現金額: {{verifyRrsult.7.WithdrawAmount}}
             </td>
             <td></td>
@@ -252,21 +253,13 @@
         <tr>
             <td>{{verifyRrsult.switch.9}}</td>
             <td>Rule10:<br>
-                1、新会员第 X 次充值以上才不算新会员<br>
-                2、梭哈（下注金额超过>=金额 X% 以上）</td>
+                新會員 成功充值 <= X 次</td>
             <td>{{verifyRrsult.10.result}}</td>
             <td>
-                1. 有清零點或提現成功(之前有提款/输光)，与本次申请提款时间的最近一笔充值金额做比较<br>
-                2. 若無，中途未提款，也未输光过，与充值金额(累计)做比较<br>
                 充值次數: {{verifyRrsult.10.charge_times}}<br>
-                充值次數限制: {{verifyRrsult.10.limit_charges_times}}<br>
-                使用充值比較數值: {{verifyRrsult.10.charge}}<br>
-                累計充值: {{verifyRrsult.10.charge_amount}}<br>
-                上次充值: {{verifyRrsult.10.prevCharge}}<br>
-                下注: {{verifyRrsult.10.bet_amount}}<br>
-                比例: {{verifyRrsult.10.ratio}}
+                充值次數門檻: {{verifyRrsult.10.limit_charges_times}}<br>
             </td>
-            <td>{{verifyRrsult.10.startTime}}</td>
+            <td></td>
             <td>{{verifyRrsult.10.endTime}}</td>
         </tr>
 
@@ -355,7 +348,8 @@
             <td>Rule16:<br>三个月未登录用户</td>
             <td>{{verifyRrsult.16.result}}</td>
             <td>
-                觸發時段: {{verifyRrsult.16.period}}
+                三方投注: {{verifyRrsult.16.third}}<br>
+                彩票投注: {{verifyRrsult.16.bet}}
             </td>
             <td>{{verifyRrsult.16.startTime}}</td>
             <td>{{verifyRrsult.16.endTime}}</td>

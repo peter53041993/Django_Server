@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+
+
+<p>幫你查GOOGLE驗證碼</p>
+<form action="/getGoogleAuthenticator/" method="POST">
+    {% csrf_token %}
+
+    <div class="">
+        {{ form.as_table }}
+        <input type="submit" value="Submit">
+    </div>
+</form>
+<p>{{ auth_code }}</p>
+<br>
+
+<p>輸入要查詢的用戶，tg只有後台的驗證碼</p>
+<p>輸入參數:<br>User: ubit的user id<br>Admin: 後台用戶名稱<br>Merchant: 商戶名稱</p>

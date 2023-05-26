@@ -23,6 +23,8 @@ urlpatterns = [
     path('agentverify/', views.agentVerify),
     path('agentverifydetail/', views.agentVerifyDetail),
     path('auto_withdraw_verify/', views.autoWithdrawVerify),
+    path('test_swagger/', views.test_swagger),
+    path('getGoogleAuthenticator/', views.getGoogleAuthenticator),
 ]
 
 

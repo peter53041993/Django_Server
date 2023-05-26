@@ -42,7 +42,10 @@ INSTALLED_APPS = [
     'rest_framework',               # 新增DRF
     'snippets.apps.SnippetsConfig', # 新增WEB APP: snippets            
     'django_tables2',               # 新增 table model: >>> pip insatll django-tables2 
-    'bootstrap3',                   # 新增 bootstrap3             
+    'bootstrap3',                   # 新增 bootstrap3
+    'rest_framework_swagger',       # 新增Swagger: django-rest-swagger
+    'drf_yasg',
+    'ubit_test.apps.UbitTestConfig',
 ]
 
 MIDDLEWARE = [
@@ -83,6 +86,29 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': BASE_DIR / 'db.sqlite3',
+    },
+    'FF4_DEV': {
+        'ENGINE': 'django.db.backends.oracle',
+        'NAME': 'firefog',
+        'USER': 'firefog',
+        'PASSWORD': 'LF64qad32gfecxPOJ603',
+        'HOST': '10.13.22.161',
+        'PORT': '1521',
+        'OPTIONS': {
+        }
+    },
+    'FF4_188': {
+        'ENGINE': 'django.db.backends.oracle',
+        'NAME': 'your_oracle_db_name',
+        'USER': 'readonly_user',
+        'PASSWORD': 'password',
+        'HOST': 'your_host',
+        'PORT': 'your_port',
+        'OPTIONS': {
+            'threaded': True,
+            'auto_commit': False,
+            'readonly': True,      # readonly
+        }
     }
 }
 
@@ -111,13 +137,13 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Asia/Taipei'
 
 USE_I18N = True
 
 USE_L10N = True
 
-USE_TZ = True
+USE_TZ = False
 
 
 # Static files (CSS, JavaScript, Images)
@@ -130,4 +156,11 @@ REST_FRAMEWORK = {
     'PAGE_SIZE': 10
 }
 
-#CACHES = {} 設定快取
+# Swagger Settings: 
+SWAGGER_SETTINGS = {
+   'info': {
+      'title': 'Project title',
+      'description': 'Project description',
+      'version': '1.0.0',
+   },
+}

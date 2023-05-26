@@ -146,7 +146,19 @@ class AutoWithdrawVerifyForm(forms.Form):
     env = forms.ChoiceField(label='', choices=env_choice)
     orderID = forms.CharField(label='訂單號', max_length=30, min_length=4, required=True)
 
-#class AddReasonForm(forms.Form):
+class getGoogleAuthenticatorForm(forms.Form):
+    env_choice = (
+        (3, 'Ubit STG'),
+        (4, 'TGBet STG'),
+        )
+    user_type = (
+        (0, 'User'),
+        (1, 'Admin'),
+        (2, 'Merchant'),
+    )
+    env = forms.ChoiceField(label='', choices=env_choice)
+    user_type = forms.ChoiceField(label='', choices=user_type)
+    user = forms.CharField(label='user', max_length=30, min_length=4, required=True)
 
 # Creat your Form wtih ModelForm
 # You must to have a model in models.py, like: from .models import some_model

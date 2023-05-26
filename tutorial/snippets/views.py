@@ -7,7 +7,7 @@ from django.shortcuts import render
 from django.http import HttpResponse, JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework import response
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, schema
 from rest_framework.parsers import JSONParser
 from rest_framework import status
 from rest_framework.response import Response
@@ -16,6 +16,8 @@ from snippets.serializers import SnippetSerializer
 from rest_framework import permissions
 from snippets.permissions import IsOwnerOrReadOnly
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+from drf_yasg.utils import swagger_auto_schema
+from drf_yasg import openapi
 
 
 
@@ -206,6 +208,7 @@ def api_root(request, format=None):
         'snippets': reverse('snippet-list', request=request, format=format),
         'test': reverse('test-api', request=request, format=format),
         'trunk_test': reverse('trunk_test', request=request, format=format),
+        # 'autoWithdrawVerify': reverse('autoWithdrawVerify', request=request, format=format)
     })
 
 from rest_framework import renderers
@@ -627,8 +630,22 @@ def agentVerifyDetail(request):
         return render(request, 'agentverifydetail.html', {'form': form})
 
 
+
+
 from .form import AutoWithdrawVerifyForm
 from .FF_.AutoWithdrawVerify import AutoWithdrawVerify, checkFrontInput
+@swagger_auto_schema(
+    method='POST',
+    request_body=openapi.Schema(
+        type=openapi.TYPE_OBJECT,
+        properties={
+            'env': openapi.Schema(type=openapi.TYPE_INTEGER),
+            'orderID': openapi.Schema(type=openapi.TYPE_STRING),
+        },
+        required=['env', 'orderID']
+    ),
+    responses={201: 'Searched', 400: 'Bad Request'}
+)
 @api_view(['POST', 'GET'])
 def autoWithdrawVerify(request):
     if request.method == 'POST':
@@ -671,6 +688,62 @@ def autoWithdrawVerify(request):
     else:
         form = AutoWithdrawVerifyForm()
         return render(request, 'auto_withdraw_verify.html', {'form': form})
+
+
+@swagger_auto_schema(
+    method='POST',
+    request_body=openapi.Schema(
+        type=openapi.TYPE_OBJECT,
+        properties={
+            'env': openapi.Schema(type=openapi.TYPE_INTEGER),
+            'user': openapi.Schema(type=openapi.TYPE_STRING),
+        },
+        required=['env', 'user']
+    ),
+)
+@api_view(['POST'])
+def test_swagger(request):
+    if request.method == 'POST':
+        env = request.data['env']
+        user= request.data['user']
+        withdraw = AutoWithdrawVerify(user, env=env)
+        res = withdraw.ruleCheck()
+        
+        return JsonResponse(res)
+
+from .form import getGoogleAuthenticatorForm
+from .FF_.googleAuthenticator import get_totp_token
+from .FF_.Connection import MysqlConnection
+@api_view(['POST', 'GET'])
+def getGoogleAuthenticator(request):
+    if request.method == 'POST':
+        form = getGoogleAuthenticatorForm(request.POST)
+        if form.is_valid():
+            env = int(form.cleaned_data['env'])
+            user = str(form.cleaned_data['user'])
+            user_type = int(form.cleaned_data['user_type'])
+            if env == 3:
+                db_ = 'ubit_stg'
+            elif env == 4:
+                db_ = 'tgbet_stg'
+                user_type = 1
+            else:
+                db_ = ''
+
+            key = MysqlConnection(env).getGoogleAutKey(db_, user, user_type)
+
+            if not key:
+                auth_code = '這個人沒有綁定GOOGLE驗證喔'
+            else:
+                auth_code = get_totp_token(key)
+
+            return render(request, 'getGoogleAuthenticator.html',
+                                 {'form': form, 'auth_code': auth_code}
+                                 )
+
+    else:
+        form = getGoogleAuthenticatorForm()
+        return render(request, 'getGoogleAuthenticator.html', {'form': form})
       
 
 

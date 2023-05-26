@@ -434,7 +434,7 @@ class AgentCenter:
                         AND fcl.REASON IN {reasons}
                         AND fcl.GMT_CREATED BETWEEN TO_DATE('{start}','yyyy-MM-dd HH24:mi:ss') AND TO_DATE('{end}','yyyy-MM-dd HH24:mi:ss')
                     ORDER BY 
-                        REASON DESC
+                        fcl.GMT_CREATED DESC
                 '''
                 cursor.execute(sql)
                 rows = cursor.fetchall()
